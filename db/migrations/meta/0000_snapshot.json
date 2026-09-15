@@ -1,0 +1,1240 @@
+{
+  "id": "f33a33ee-c087-4395-9035-707755b425b0",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.competition_results": {
+      "name": "competition_results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kaggler_id": {
+          "name": "kaggler_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_id": {
+          "name": "team_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "final_rank": {
+          "name": "final_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_teams": {
+          "name": "total_teams",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percentile": {
+          "name": "percentile",
+          "type": "numeric(12, 10)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "medal": {
+          "name": "medal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "team_size": {
+          "name": "team_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_solo": {
+          "name": "is_solo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result_score": {
+          "name": "result_score",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result_date": {
+          "name": "result_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "competition_results_kaggler_id_idx": {
+          "name": "competition_results_kaggler_id_idx",
+          "columns": [
+            {
+              "expression": "kaggler_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "competition_results_competition_id_idx": {
+          "name": "competition_results_competition_id_idx",
+          "columns": [
+            {
+              "expression": "competition_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "competition_results_result_score_idx": {
+          "name": "competition_results_result_score_idx",
+          "columns": [
+            {
+              "expression": "result_score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "competition_results_kaggler_id_kagglers_id_fk": {
+          "name": "competition_results_kaggler_id_kagglers_id_fk",
+          "tableFrom": "competition_results",
+          "tableTo": "kagglers",
+          "columnsFrom": ["kaggler_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "competition_results_competition_id_competitions_id_fk": {
+          "name": "competition_results_competition_id_competitions_id_fk",
+          "tableFrom": "competition_results",
+          "tableTo": "competitions",
+          "columnsFrom": ["competition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "competition_results_team_id_teams_id_fk": {
+          "name": "competition_results_team_id_teams_id_fk",
+          "tableFrom": "competition_results",
+          "tableTo": "teams",
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "competition_results_kaggler_competition_unique": {
+          "name": "competition_results_kaggler_competition_unique",
+          "nullsNotDistinct": false,
+          "columns": ["kaggler_id", "competition_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "competition_results_rank_positive": {
+          "name": "competition_results_rank_positive",
+          "value": "\"competition_results\".\"final_rank\" > 0"
+        },
+        "competition_results_total_teams_positive": {
+          "name": "competition_results_total_teams_positive",
+          "value": "\"competition_results\".\"total_teams\" > 0"
+        },
+        "competition_results_rank_within_teams": {
+          "name": "competition_results_rank_within_teams",
+          "value": "\"competition_results\".\"final_rank\" <= \"competition_results\".\"total_teams\""
+        },
+        "competition_results_percentile_range": {
+          "name": "competition_results_percentile_range",
+          "value": "\"competition_results\".\"percentile\" > 0 and \"competition_results\".\"percentile\" <= 1"
+        },
+        "competition_results_team_size_positive": {
+          "name": "competition_results_team_size_positive",
+          "value": "\"competition_results\".\"team_size\" >= 1"
+        },
+        "competition_results_solo_matches_team_size": {
+          "name": "competition_results_solo_matches_team_size",
+          "value": "\"competition_results\".\"is_solo\" = (\"competition_results\".\"team_size\" = 1)"
+        },
+        "competition_results_medal_valid": {
+          "name": "competition_results_medal_valid",
+          "value": "\"competition_results\".\"medal\" is null or \"competition_results\".\"medal\" in ('Gold', 'Silver', 'Bronze')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.competition_specialties": {
+      "name": "competition_specialties",
+      "schema": "",
+      "columns": {
+        "competition_id": {
+          "name": "competition_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialty": {
+          "name": "specialty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confidence": {
+          "name": "confidence",
+          "type": "numeric(5, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "classification_source": {
+          "name": "classification_source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "competition_specialties_competition_id_competitions_id_fk": {
+          "name": "competition_specialties_competition_id_competitions_id_fk",
+          "tableFrom": "competition_specialties",
+          "tableTo": "competitions",
+          "columnsFrom": ["competition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "competition_specialties_competition_id_specialty_pk": {
+          "name": "competition_specialties_competition_id_specialty_pk",
+          "columns": ["competition_id", "specialty"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "competition_specialties_confidence_range": {
+          "name": "competition_specialties_confidence_range",
+          "value": "\"competition_specialties\".\"confidence\" >= 0 and \"competition_specialties\".\"confidence\" <= 1"
+        },
+        "competition_specialties_source_valid": {
+          "name": "competition_specialties_source_valid",
+          "value": "\"competition_specialties\".\"classification_source\" in ('tag', 'manual', 'llm')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.competitions": {
+      "name": "competitions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kaggle_competition_id": {
+          "name": "kaggle_competition_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subtitle": {
+          "name": "subtitle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "enabled_at": {
+          "name": "enabled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadline_at": {
+          "name": "deadline_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_teams": {
+          "name": "total_teams",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_competitors": {
+          "name": "total_competitors",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competition_type": {
+          "name": "competition_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "can_qualify_tiers": {
+          "name": "can_qualify_tiers",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "has_leaderboard": {
+          "name": "has_leaderboard",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "host_name": {
+          "name": "host_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "competitions_kaggle_competition_id_unique": {
+          "name": "competitions_kaggle_competition_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["kaggle_competition_id"]
+        },
+        "competitions_slug_unique": {
+          "name": "competitions_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "competitions_team_counts_non_negative": {
+          "name": "competitions_team_counts_non_negative",
+          "value": "(\"competitions\".\"total_teams\" is null or \"competitions\".\"total_teams\" >= 0) and (\"competitions\".\"total_competitors\" is null or \"competitions\".\"total_competitors\" >= 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.etl_runs": {
+      "name": "etl_runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "meta_kaggle_version": {
+          "name": "meta_kaggle_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "users_processed": {
+          "name": "users_processed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "competitions_processed": {
+          "name": "competitions_processed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "results_processed": {
+          "name": "results_processed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "etl_runs_started_at_idx": {
+          "name": "etl_runs_started_at_idx",
+          "columns": [
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "etl_runs_status_valid": {
+          "name": "etl_runs_status_valid",
+          "value": "\"etl_runs\".\"status\" in ('running', 'succeeded', 'failed')"
+        },
+        "etl_runs_counts_non_negative": {
+          "name": "etl_runs_counts_non_negative",
+          "value": "\"etl_runs\".\"users_processed\" >= 0 and \"etl_runs\".\"competitions_processed\" >= 0 and \"etl_runs\".\"results_processed\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.kaggler_scores": {
+      "name": "kaggler_scores",
+      "schema": "",
+      "columns": {
+        "kaggler_id": {
+          "name": "kaggler_id",
+          "type": "bigint",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "score_version": {
+          "name": "score_version",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "career_raw": {
+          "name": "career_raw",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "career_power": {
+          "name": "career_power",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "career_rank": {
+          "name": "career_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "solo_raw": {
+          "name": "solo_raw",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solo_power": {
+          "name": "solo_power",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solo_rank": {
+          "name": "solo_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consistency_raw": {
+          "name": "consistency_raw",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consistency_score": {
+          "name": "consistency_score",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "consistency_rank": {
+          "name": "consistency_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "momentum_raw": {
+          "name": "momentum_raw",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "momentum_score": {
+          "name": "momentum_score",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "momentum_rank": {
+          "name": "momentum_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_count": {
+          "name": "competition_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "solo_competition_count": {
+          "name": "solo_competition_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "calculated_at": {
+          "name": "calculated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "kaggler_scores_career_power_idx": {
+          "name": "kaggler_scores_career_power_idx",
+          "columns": [
+            {
+              "expression": "career_power",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "kaggler_scores_momentum_score_idx": {
+          "name": "kaggler_scores_momentum_score_idx",
+          "columns": [
+            {
+              "expression": "momentum_score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "kaggler_scores_solo_power_idx": {
+          "name": "kaggler_scores_solo_power_idx",
+          "columns": [
+            {
+              "expression": "solo_power",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "kaggler_scores_kaggler_id_kagglers_id_fk": {
+          "name": "kaggler_scores_kaggler_id_kagglers_id_fk",
+          "tableFrom": "kaggler_scores",
+          "tableTo": "kagglers",
+          "columnsFrom": ["kaggler_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "kaggler_scores_powers_in_range": {
+          "name": "kaggler_scores_powers_in_range",
+          "value": "\"kaggler_scores\".\"career_power\" between 0 and 100\n        and (\"kaggler_scores\".\"solo_power\" is null or \"kaggler_scores\".\"solo_power\" between 0 and 100)\n        and (\"kaggler_scores\".\"consistency_score\" is null or \"kaggler_scores\".\"consistency_score\" between 0 and 100)\n        and \"kaggler_scores\".\"momentum_score\" between 0 and 100"
+        },
+        "kaggler_scores_counts_non_negative": {
+          "name": "kaggler_scores_counts_non_negative",
+          "value": "\"kaggler_scores\".\"competition_count\" >= 0 and \"kaggler_scores\".\"solo_competition_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.kagglers": {
+      "name": "kagglers",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kaggle_user_id": {
+          "name": "kaggle_user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registered_at": {
+          "name": "registered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "competition_tier": {
+          "name": "competition_tier",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_points": {
+          "name": "official_points",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_rank": {
+          "name": "official_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "highest_rank": {
+          "name": "highest_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gold_count": {
+          "name": "gold_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "silver_count": {
+          "name": "silver_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "bronze_count": {
+          "name": "bronze_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "kagglers_username_idx": {
+          "name": "kagglers_username_idx",
+          "columns": [
+            {
+              "expression": "username",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "kagglers_official_rank_idx": {
+          "name": "kagglers_official_rank_idx",
+          "columns": [
+            {
+              "expression": "official_rank",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "kagglers_kaggle_user_id_unique": {
+          "name": "kagglers_kaggle_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["kaggle_user_id"]
+        },
+        "kagglers_username_unique": {
+          "name": "kagglers_username_unique",
+          "nullsNotDistinct": false,
+          "columns": ["username"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "kagglers_official_rank_positive": {
+          "name": "kagglers_official_rank_positive",
+          "value": "\"kagglers\".\"official_rank\" is null or \"kagglers\".\"official_rank\" > 0"
+        },
+        "kagglers_highest_rank_positive": {
+          "name": "kagglers_highest_rank_positive",
+          "value": "\"kagglers\".\"highest_rank\" is null or \"kagglers\".\"highest_rank\" > 0"
+        },
+        "kagglers_medal_counts_non_negative": {
+          "name": "kagglers_medal_counts_non_negative",
+          "value": "\"kagglers\".\"gold_count\" >= 0 and \"kagglers\".\"silver_count\" >= 0 and \"kagglers\".\"bronze_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.ranking_snapshots": {
+      "name": "ranking_snapshots",
+      "schema": "",
+      "columns": {
+        "snapshot_date": {
+          "name": "snapshot_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaggler_id": {
+          "name": "kaggler_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "official_rank": {
+          "name": "official_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "official_points": {
+          "name": "official_points",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "career_rank": {
+          "name": "career_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "career_power": {
+          "name": "career_power",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "ranking_snapshots_kaggler_id_idx": {
+          "name": "ranking_snapshots_kaggler_id_idx",
+          "columns": [
+            {
+              "expression": "kaggler_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ranking_snapshots_kaggler_id_kagglers_id_fk": {
+          "name": "ranking_snapshots_kaggler_id_kagglers_id_fk",
+          "tableFrom": "ranking_snapshots",
+          "tableTo": "kagglers",
+          "columnsFrom": ["kaggler_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "ranking_snapshots_snapshot_date_kaggler_id_pk": {
+          "name": "ranking_snapshots_snapshot_date_kaggler_id_pk",
+          "columns": ["snapshot_date", "kaggler_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.specialty_scores": {
+      "name": "specialty_scores",
+      "schema": "",
+      "columns": {
+        "kaggler_id": {
+          "name": "kaggler_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specialty": {
+          "name": "specialty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "raw_score": {
+          "name": "raw_score",
+          "type": "numeric(14, 4)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "numeric(6, 3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_count": {
+          "name": "competition_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "gold_count": {
+          "name": "gold_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "silver_count": {
+          "name": "silver_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "bronze_count": {
+          "name": "bronze_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "calculated_at": {
+          "name": "calculated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "specialty_scores_specialty_score_idx": {
+          "name": "specialty_scores_specialty_score_idx",
+          "columns": [
+            {
+              "expression": "specialty",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "score",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "specialty_scores_kaggler_id_kagglers_id_fk": {
+          "name": "specialty_scores_kaggler_id_kagglers_id_fk",
+          "tableFrom": "specialty_scores",
+          "tableTo": "kagglers",
+          "columnsFrom": ["kaggler_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "specialty_scores_kaggler_id_specialty_pk": {
+          "name": "specialty_scores_kaggler_id_specialty_pk",
+          "columns": ["kaggler_id", "specialty"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "specialty_scores_score_range": {
+          "name": "specialty_scores_score_range",
+          "value": "\"specialty_scores\".\"score\" between 0 and 100"
+        },
+        "specialty_scores_counts_non_negative": {
+          "name": "specialty_scores_counts_non_negative",
+          "value": "\"specialty_scores\".\"competition_count\" >= 0 and \"specialty_scores\".\"gold_count\" >= 0 and \"specialty_scores\".\"silver_count\" >= 0 and \"specialty_scores\".\"bronze_count\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.team_members": {
+      "name": "team_members",
+      "schema": "",
+      "columns": {
+        "team_id": {
+          "name": "team_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kaggler_id": {
+          "name": "kaggler_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "team_members_kaggler_id_idx": {
+          "name": "team_members_kaggler_id_idx",
+          "columns": [
+            {
+              "expression": "kaggler_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "team_members_team_id_teams_id_fk": {
+          "name": "team_members_team_id_teams_id_fk",
+          "tableFrom": "team_members",
+          "tableTo": "teams",
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "team_members_kaggler_id_kagglers_id_fk": {
+          "name": "team_members_kaggler_id_kagglers_id_fk",
+          "tableFrom": "team_members",
+          "tableTo": "kagglers",
+          "columnsFrom": ["kaggler_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "team_members_team_id_kaggler_id_pk": {
+          "name": "team_members_team_id_kaggler_id_pk",
+          "columns": ["team_id", "kaggler_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.teams": {
+      "name": "teams",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kaggle_team_id": {
+          "name": "kaggle_team_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "competition_id": {
+          "name": "competition_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "team_name": {
+          "name": "team_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "private_rank": {
+          "name": "private_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_rank": {
+          "name": "public_rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medal": {
+          "name": "medal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "medal_awarded_at": {
+          "name": "medal_awarded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "team_size": {
+          "name": "team_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_benchmark": {
+          "name": "is_benchmark",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {
+        "teams_competition_id_idx": {
+          "name": "teams_competition_id_idx",
+          "columns": [
+            {
+              "expression": "competition_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "teams_competition_id_competitions_id_fk": {
+          "name": "teams_competition_id_competitions_id_fk",
+          "tableFrom": "teams",
+          "tableTo": "competitions",
+          "columnsFrom": ["competition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "teams_kaggle_team_id_unique": {
+          "name": "teams_kaggle_team_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["kaggle_team_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "teams_private_rank_positive": {
+          "name": "teams_private_rank_positive",
+          "value": "\"teams\".\"private_rank\" is null or \"teams\".\"private_rank\" > 0"
+        },
+        "teams_public_rank_positive": {
+          "name": "teams_public_rank_positive",
+          "value": "\"teams\".\"public_rank\" is null or \"teams\".\"public_rank\" > 0"
+        },
+        "teams_team_size_positive": {
+          "name": "teams_team_size_positive",
+          "value": "\"teams\".\"team_size\" >= 1"
+        },
+        "teams_medal_valid": {
+          "name": "teams_medal_valid",
+          "value": "\"teams\".\"medal\" is null or \"teams\".\"medal\" in ('Gold', 'Silver', 'Bronze')"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
