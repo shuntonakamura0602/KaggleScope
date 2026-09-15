@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 3 provides the PostgreSQL and Drizzle persistence foundation while the UI continues to use 20 fictional Kagglers:
+Part 4 provides the Meta Kaggle ingestion pipeline while the UI continues to use 20 fictional Kagglers:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -13,8 +13,11 @@ Part 3 provides the PostgreSQL and Drizzle persistence foundation while the UI c
 - Loading, empty, and not-found states
 - PostgreSQL schema, constraints, indexes, and generated migrations
 - Idempotent preview seed for Kagglers and score tables
+- Python 3.12 and Polars ETL for the five required Meta Kaggle CSV files
+- Competition Expert+ filtering and Kaggler, Competition, Team transforms
+- Transactional PostgreSQL upserts with persisted ETL run status
 
-ETL, production score calculation, search behavior, and live Kaggle data are intentionally deferred to later implementation parts.
+Competition result generation, production score calculation, search behavior, and live UI data are intentionally deferred to later implementation parts.
 
 ## Stack
 
@@ -48,6 +51,29 @@ npm run build
 ## Environment variables
 
 See `.env.example`. Secrets must only be stored in ignored local environment files and must never be committed.
+
+## Meta Kaggle ETL
+
+Requirements: Python 3.12 or newer. Create an isolated environment and install the ETL package from the repository root:
+
+```bash
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -e './etl[dev]'
+```
+
+Set `DATABASE_URL` and configure Kaggle authentication with `KAGGLE_API_TOKEN`, `KAGGLE_USERNAME` plus `KAGGLE_KEY`, or `~/.kaggle/kaggle.json`. A production sync downloads only the required source files and performs transactional, idempotent upserts:
+
+```bash
+.venv/bin/python -m etl.sync
+```
+
+Validate an existing download without changing PostgreSQL:
+
+```bash
+.venv/bin/python -m etl.sync --skip-download --dry-run --data-dir etl/tests/fixtures/meta-kaggle
+```
+
+Runtime CSV files and timestamped logs live under ignored `etl/data` and `etl/logs` directories. A failed database-backed run is recorded in `etl_runs`; the detailed exception remains in the local log.
 
 ## Database setup
 

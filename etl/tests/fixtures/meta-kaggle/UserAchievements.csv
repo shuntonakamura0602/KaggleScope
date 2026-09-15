@@ -1,0 +1,6 @@
+UserId,AchievementType,Tier,CurrentRanking,HighestRanking,Points,TotalGold,TotalSilver,TotalBronze
+1,Competitions,2,800,600,1234.5,1,2,3
+2,competition,3,120,80,9876.5,4,5,6
+3,Competitions,1,5000,4200,100.0,0,0,1
+1,Datasets,3,50,40,500.0,2,1,0
+4,Competitions,5,1,1,10000.0,10,10,10

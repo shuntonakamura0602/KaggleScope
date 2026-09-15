@@ -1,0 +1,4 @@
+Id,CompetitionId,TeamName,PrivateLeaderboardRank,PublicLeaderboardRank,Medal,MedalAwardDate,IsBenchmark
+100,10,Solo Expert,5,4,1,2024-02-02,false
+101,10,Master Duo,2,1,Silver,2024-02-02,false
+102,10,Contributor Only,50,45,,,false

@@ -40,6 +40,13 @@ next-env.d.ts
 *.tsbuildinfo
 /dist/
 /.wrangler/
+/.venv/
+/etl/data/
+/etl/logs/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
 # Checkout-local execution profile and tool state; never publish them.
 /.sites-runtime/
 /.agents/
