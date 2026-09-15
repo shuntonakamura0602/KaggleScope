@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,7 +26,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="min-h-screen bg-[radial-gradient(circle_at_50%_-20%,rgb(45_212_191/10%),transparent_35%)]">
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </div>
+      </body>
     </html>
   );
 }

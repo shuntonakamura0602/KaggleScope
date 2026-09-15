@@ -4,7 +4,15 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 1 establishes the application foundation. Product screens, PostgreSQL, ETL, scoring, and live Kaggle data are intentionally deferred to later implementation parts.
+Part 2 provides the static product experience using 20 fictional Kagglers:
+
+- Home discovery surface
+- Overall, Momentum, Solo, and Consistency rankings
+- Kaggler profiles with scores, specialties, and competition history
+- Responsive desktop and mobile layouts
+- Loading, empty, and not-found states
+
+PostgreSQL, ETL, score calculation, search behavior, and live Kaggle data are intentionally deferred to later implementation parts.
 
 ## Stack
 
