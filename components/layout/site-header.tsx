@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Home, Shapes } from "lucide-react";
+import { BarChart3, Home, Scale, Shapes } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 
 const navigation = [
@@ -10,6 +10,7 @@ const navigation = [
     href: "/specialties/computer-vision",
     icon: Shapes,
   },
+  { label: "Compare", href: "/compare", icon: Scale },
 ];
 
 export function SiteHeader() {

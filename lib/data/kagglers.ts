@@ -23,6 +23,12 @@ import {
   specialtyScores,
   teamMembers,
 } from "@/db/schema";
+import {
+  buildHeadToHead,
+  buildSpecialtyComparison,
+  type HeadToHead,
+  type SpecialtyComparison,
+} from "@/lib/compare";
 import { cacheDataQuery } from "@/lib/data/cache";
 import { isDatabaseConfigured } from "@/lib/db/env";
 import { getRanking, type RankingKind } from "@/lib/rankings";
@@ -97,6 +103,13 @@ export type KagglerProfileData = DataStatus & {
   kaggler: Kaggler;
   history: CompetitionResult[];
   teammates: Teammate[];
+};
+
+export type CompareData = DataStatus & {
+  left: Kaggler;
+  right: Kaggler;
+  headToHead: HeadToHead;
+  specialties: SpecialtyComparison[];
 };
 
 const PAGE_SIZE = 50;
@@ -710,4 +723,35 @@ const getKagglerProfileDataQuery = async (
 
 export const getKagglerProfileData = cache(
   cacheDataQuery(getKagglerProfileDataQuery, ["kaggler-profile"]),
+);
+
+export const getCompareData = cache(
+  async (
+    leftUsername: string,
+    rightUsername: string,
+  ): Promise<CompareData | null> => {
+    const [leftProfile, rightProfile] = await Promise.all([
+      getKagglerProfileData(leftUsername),
+      getKagglerProfileData(rightUsername),
+    ]);
+    if (!leftProfile || !rightProfile) return null;
+
+    const updatedTimes = [leftProfile.updatedAt, rightProfile.updatedAt].filter(
+      (value): value is Date => value !== null,
+    );
+    return {
+      source: leftProfile.source,
+      updatedAt:
+        updatedTimes.length > 0
+          ? new Date(Math.max(...updatedTimes.map((value) => value.getTime())))
+          : null,
+      left: leftProfile.kaggler,
+      right: rightProfile.kaggler,
+      headToHead: buildHeadToHead(leftProfile.history, rightProfile.history),
+      specialties: buildSpecialtyComparison(
+        leftProfile.kaggler,
+        rightProfile.kaggler,
+      ),
+    };
+  },
 );

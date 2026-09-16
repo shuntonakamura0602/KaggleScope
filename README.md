@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 8 completes the database-backed server layer:
+Part 9 completes shareable Kaggler comparisons:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -27,8 +27,11 @@ Part 8 completes the database-backed server layer:
 - Paginated Specialty Power rankings with specialty result and medal totals
 - Result Score-ranked Best Performances on Kaggler profiles
 - Tagged one-hour data caching with authenticated ETL revalidation
+- Shareable two-Kaggler comparisons using URL query parameters
+- Specialty-by-specialty comparisons with a clear winner or draw
+- Head-to-head summaries for shared competitions, including tied finishes
 
-Specialty classification, comparison, and methodology pages are intentionally deferred to later implementation parts.
+Specialty classification and methodology pages are intentionally deferred to later implementation parts.
 
 ## Stack
 
