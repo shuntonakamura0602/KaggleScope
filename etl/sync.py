@@ -1,4 +1,4 @@
-"""Command-line entry point for the Part 4 Meta Kaggle sync."""
+"""Command-line entry point for the Meta Kaggle sync and score calculation."""
 
 from __future__ import annotations
 
@@ -19,9 +19,18 @@ LOGGER = logging.getLogger("kagglescope.etl")
 DEFAULT_DATA_DIR = Path(__file__).parent / "data" / "meta-kaggle"
 
 
+def _parse_as_of(value: str) -> datetime:
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=UTC)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("expected YYYY-MM-DD") from exc
+
+
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Download, validate, transform, and upsert Meta Kaggle data."
+        description=(
+            "Download, validate, score, and transactionally upsert Meta Kaggle data."
+        )
     )
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument(
@@ -38,6 +47,11 @@ def _parser() -> argparse.ArgumentParser:
         "--dry-run",
         action="store_true",
         help="Validate and transform without connecting to PostgreSQL.",
+    )
+    parser.add_argument(
+        "--as-of",
+        type=_parse_as_of,
+        help="Score calculation date in YYYY-MM-DD format (defaults to today).",
     )
     return parser
 
@@ -60,6 +74,7 @@ def run(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     log_path = _configure_logging()
     data_dir = args.data_dir.expanduser().resolve()
+    calculation_time = args.as_of or datetime.now(UTC)
     LOGGER.info("Starting Meta Kaggle sync (data_dir=%s)", data_dir)
 
     run_id = None
@@ -75,7 +90,7 @@ def run(argv: list[str] | None = None) -> int:
 
         schemas = validate_source_directory(data_dir)
         LOGGER.info("Validated %d input schemas", len(schemas))
-        transformed = transform_sources(data_dir, schemas)
+        transformed = transform_sources(data_dir, schemas, as_of=calculation_time)
         LOGGER.info("Transform summary: %s", json.dumps(transformed.counts))
 
         if args.dry_run:

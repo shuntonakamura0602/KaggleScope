@@ -18,6 +18,9 @@ def test_transforms_only_competition_expert_and_above() -> None:
         "competitions": 2,
         "teams": 2,
         "team_members": 3,
+        "competition_results": 2,
+        "kaggler_scores": 2,
+        "ranking_snapshots": 2,
     }
 
 

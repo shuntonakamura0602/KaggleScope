@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 4 provides the Meta Kaggle ingestion pipeline while the UI continues to use 20 fictional Kagglers:
+Part 5 provides the production scoring pipeline while the UI continues to use 20 fictional Kagglers:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -16,8 +16,11 @@ Part 4 provides the Meta Kaggle ingestion pipeline while the UI continues to use
 - Python 3.12 and Polars ETL for the five required Meta Kaggle CSV files
 - Competition Expert+ filtering and Kaggler, Competition, Team transforms
 - Transactional PostgreSQL upserts with persisted ETL run status
+- Valid Competition Result generation with Private Rank priority and Public Rank fallback
+- Career, Solo, Consistency, and Momentum calculations using score version `0.1`
+- Idempotent score upserts and daily ranking snapshots
 
-Competition result generation, production score calculation, search behavior, and live UI data are intentionally deferred to later implementation parts.
+Specialty classification, search behavior, and live UI data are intentionally deferred to later implementation parts.
 
 ## Stack
 
@@ -73,6 +76,12 @@ Validate an existing download without changing PostgreSQL:
 .venv/bin/python -m etl.sync --skip-download --dry-run --data-dir etl/tests/fixtures/meta-kaggle
 ```
 
+For a reproducible historical calculation, pass an explicit UTC date. Results after that date are excluded:
+
+```bash
+.venv/bin/python -m etl.sync --skip-download --dry-run --as-of 2025-01-01
+```
+
 Runtime CSV files and timestamped logs live under ignored `etl/data` and `etl/logs` directories. A failed database-backed run is recorded in `etl_runs`; the detailed exception remains in the local log.
 
 ## Database setup
@@ -97,4 +106,4 @@ Migration files under `db/migrations` are committed and must remain immutable af
 
 ## Data and methodology
 
-The planned production data source is the publicly available Meta Kaggle dataset. KaggleScope metrics are unofficial and will be documented with a score version and transparent formulas before data-backed pages are released.
+The production data source is the publicly available Meta Kaggle dataset. KaggleScope metrics are unofficial and use the transparent `0.1` formulas documented in [`docs/scoring-v0.1.md`](docs/scoring-v0.1.md). Solo Power requires at least 3 solo results, Consistency Score requires at least 5 results, and Momentum covers the latest 365 days with 180-day exponential decay.

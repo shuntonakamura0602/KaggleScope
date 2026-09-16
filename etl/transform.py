@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 import polars as pl
 
 from .contracts import CONTRACTS
+from .scoring import (
+    build_competition_results,
+    build_ranking_snapshots,
+    calculate_kaggler_scores,
+)
 
 EXPERT_TIER = 2
 GRANDMASTER_TIER = 4
@@ -20,6 +26,9 @@ class TransformedData:
     competitions: pl.DataFrame
     teams: pl.DataFrame
     team_members: pl.DataFrame
+    competition_results: pl.DataFrame
+    kaggler_scores: pl.DataFrame
+    ranking_snapshots: pl.DataFrame
 
     @property
     def counts(self) -> dict[str, int]:
@@ -28,6 +37,9 @@ class TransformedData:
             "competitions": self.competitions.height,
             "teams": self.teams.height,
             "team_members": self.team_members.height,
+            "competition_results": self.competition_results.height,
+            "kaggler_scores": self.kaggler_scores.height,
+            "ranking_snapshots": self.ranking_snapshots.height,
         }
 
 
@@ -52,6 +64,16 @@ def _text(columns: set[str], name: str) -> pl.Expr:
 
 def _integer(columns: set[str], name: str) -> pl.Expr:
     return _column(columns, name, pl.Int64)
+
+
+def _positive_integer(columns: set[str], name: str) -> pl.Expr:
+    value = _integer(columns, name)
+    return pl.when(value > 0).then(value).otherwise(None)
+
+
+def _non_negative_integer(columns: set[str], name: str) -> pl.Expr:
+    value = _integer(columns, name)
+    return pl.when(value >= 0).then(value).otherwise(None)
 
 
 def _float(columns: set[str], name: str) -> pl.Expr:
@@ -81,8 +103,12 @@ def _medal(columns: set[str]) -> pl.Expr:
 
 
 def transform_sources(
-    data_dir: Path, columns_by_source: dict[str, set[str]]
+    data_dir: Path,
+    columns_by_source: dict[str, set[str]],
+    *,
+    as_of: datetime | None = None,
 ) -> TransformedData:
+    calculation_time = as_of or datetime.now(UTC)
     achievements_columns = columns_by_source["achievements"]
     competition_achievements = (
         _scan(data_dir / CONTRACTS["achievements"].filename)
@@ -99,8 +125,12 @@ def transform_sources(
             pl.col("UserId").cast(pl.Int64, strict=False).alias("kaggle_user_id"),
             pl.col("Tier").cast(pl.Int16, strict=False).alias("competition_tier"),
             _float(achievements_columns, "Points").alias("official_points"),
-            _integer(achievements_columns, "CurrentRanking").alias("official_rank"),
-            _integer(achievements_columns, "HighestRanking").alias("highest_rank"),
+            _positive_integer(achievements_columns, "CurrentRanking").alias(
+                "official_rank"
+            ),
+            _positive_integer(achievements_columns, "HighestRanking").alias(
+                "highest_rank"
+            ),
             _integer(achievements_columns, "TotalGold")
             .fill_null(0)
             .alias("gold_count"),
@@ -141,8 +171,10 @@ def transform_sources(
             _text(competition_columns, "Subtitle").alias("subtitle"),
             _text(competition_columns, "EnabledDate").alias("enabled_at"),
             _text(competition_columns, "DeadlineDate").alias("deadline_at"),
-            _integer(competition_columns, "TotalTeams").alias("total_teams"),
-            _integer(competition_columns, "TotalCompetitors").alias(
+            _non_negative_integer(competition_columns, "TotalTeams").alias(
+                "total_teams"
+            ),
+            _non_negative_integer(competition_columns, "TotalCompetitors").alias(
                 "total_competitors"
             ),
             _text(competition_columns, "CompetitionTypeId").alias("competition_type"),
@@ -183,8 +215,12 @@ def transform_sources(
             .cast(pl.Int64, strict=False)
             .alias("kaggle_competition_id"),
             _text(team_columns, "TeamName").alias("team_name"),
-            _integer(team_columns, "PrivateLeaderboardRank").alias("private_rank"),
-            _integer(team_columns, "PublicLeaderboardRank").alias("public_rank"),
+            _positive_integer(team_columns, "PrivateLeaderboardRank").alias(
+                "private_rank"
+            ),
+            _positive_integer(team_columns, "PublicLeaderboardRank").alias(
+                "public_rank"
+            ),
             _medal(team_columns).alias("medal"),
             _text(team_columns, "MedalAwardDate").alias("medal_awarded_at"),
             _boolean(team_columns, "IsBenchmark").alias("is_benchmark"),
@@ -208,9 +244,24 @@ def transform_sources(
         .collect(engine="streaming")
     )
 
+    competition_results = build_competition_results(
+        competitions, teams, team_members, as_of=calculation_time
+    )
+    kaggler_scores = calculate_kaggler_scores(
+        kagglers, competition_results, as_of=calculation_time
+    )
+    ranking_snapshots = build_ranking_snapshots(
+        kagglers,
+        kaggler_scores,
+        snapshot_date=calculation_time.date().isoformat(),
+    )
+
     return TransformedData(
         kagglers=kagglers,
         competitions=competitions,
         teams=teams,
         team_members=team_members,
+        competition_results=competition_results,
+        kaggler_scores=kaggler_scores,
+        ranking_snapshots=ranking_snapshots,
     )
