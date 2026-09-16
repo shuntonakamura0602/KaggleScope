@@ -96,7 +96,7 @@ async function seed() {
               : kaggler.soloPower * soloCompetitionCount,
           soloPower: kaggler.soloPower,
           soloRank: getRankForKaggler(kaggler.username, "solo"),
-          consistencyRaw: kaggler.consistency / 100,
+          consistencyRaw: (kaggler.consistency ?? 0) / 100,
           consistencyScore: kaggler.consistency,
           consistencyRank:
             getRankForKaggler(kaggler.username, "consistency") ?? 0,
@@ -120,7 +120,7 @@ async function seed() {
                 : kaggler.soloPower * soloCompetitionCount,
             soloPower: kaggler.soloPower,
             soloRank: getRankForKaggler(kaggler.username, "solo"),
-            consistencyRaw: kaggler.consistency / 100,
+            consistencyRaw: (kaggler.consistency ?? 0) / 100,
             consistencyScore: kaggler.consistency,
             consistencyRank:
               getRankForKaggler(kaggler.username, "consistency") ?? 0,

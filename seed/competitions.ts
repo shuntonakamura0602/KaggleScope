@@ -1,4 +1,4 @@
-import { kagglers, type Kaggler, type SpecialtyName } from "@/seed/kagglers";
+import { kagglers, type Kaggler } from "@/seed/kagglers";
 
 export type CompetitionResult = {
   slug: string;
@@ -8,7 +8,7 @@ export type CompetitionResult = {
   teams: number;
   medal: "Gold" | "Silver" | "Bronze" | null;
   teamSize: number;
-  specialty: SpecialtyName;
+  specialty: string;
 };
 
 const competitionTemplates: Omit<CompetitionResult, "rank">[] = [

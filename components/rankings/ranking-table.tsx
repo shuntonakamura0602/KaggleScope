@@ -17,7 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getMetricValue, type RankingMetric } from "@/lib/rankings";
+import {
+  getMetricRank,
+  getMetricValue,
+  type RankingMetric,
+} from "@/lib/rankings";
 import type { Kaggler } from "@/seed/kagglers";
 
 export function RankingTable({
@@ -66,7 +70,7 @@ export function RankingTable({
             {kagglers.map((kaggler, index) => (
               <TableRow key={kaggler.username}>
                 <TableCell className="pl-5 font-mono text-muted-foreground">
-                  {index + 1}
+                  {getMetricRank(kaggler, metric) ?? index + 1}
                 </TableCell>
                 <TableCell>
                   <Link
@@ -88,7 +92,7 @@ export function RankingTable({
                   {kaggler.tier}
                 </TableCell>
                 <TableCell className="font-mono">
-                  #{kaggler.officialRank}
+                  {kaggler.officialRank ? `#${kaggler.officialRank}` : "—"}
                 </TableCell>
                 <TableCell>
                   <MedalCounts medals={kaggler.medals} />
@@ -114,7 +118,7 @@ export function RankingTable({
             >
               <div className="flex items-center gap-3">
                 <span className="w-6 font-mono text-sm text-muted-foreground">
-                  {index + 1}
+                  {getMetricRank(kaggler, metric) ?? index + 1}
                 </span>
                 <AvatarMark name={kaggler.displayName} />
                 <span className="min-w-0 flex-1">
@@ -137,7 +141,9 @@ export function RankingTable({
               <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
                 <MedalCounts medals={kaggler.medals} />
                 <span className="font-mono text-xs text-muted-foreground">
-                  Official #{kaggler.officialRank}
+                  {kaggler.officialRank
+                    ? `Official #${kaggler.officialRank}`
+                    : "Official rank —"}
                 </span>
               </div>
             </Link>

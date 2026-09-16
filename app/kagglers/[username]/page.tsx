@@ -16,12 +16,8 @@ import { ProfileScoreGrid } from "@/components/kaggler/profile-score-grid";
 import { SpecialtyBars } from "@/components/kaggler/specialty-bars";
 import { PreviewNotice } from "@/components/layout/preview-notice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getCompetitionHistory, getPercentile } from "@/seed/competitions";
-import { getKaggler, kagglers } from "@/seed/kagglers";
-
-export function generateStaticParams() {
-  return kagglers.map((kaggler) => ({ username: kaggler.username }));
-}
+import { getKagglerProfileData } from "@/lib/data/kagglers";
+import { getPercentile } from "@/seed/competitions";
 
 export async function generateMetadata({
   params,
@@ -29,12 +25,12 @@ export async function generateMetadata({
   params: Promise<{ username: string }>;
 }): Promise<Metadata> {
   const { username } = await params;
-  const kaggler = getKaggler(username);
-  if (!kaggler) return {};
+  const data = await getKagglerProfileData(username);
+  if (!data) return {};
 
   return {
-    title: `${kaggler.displayName} Kaggle Stats & Rankings`,
-    description: `Explore ${kaggler.displayName}'s preview competition stats, rankings, medals, and specialties on KaggleScope.`,
+    title: `${data.kaggler.displayName} Kaggle Stats & Rankings`,
+    description: `Explore ${data.kaggler.displayName}'s competition stats, rankings, medals, and specialties on KaggleScope.`,
   };
 }
 
@@ -44,26 +40,18 @@ export default async function KagglerProfile({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-  const kaggler = getKaggler(username);
-  if (!kaggler) notFound();
+  const data = await getKagglerProfileData(username);
+  if (!data) notFound();
 
-  const history = getCompetitionHistory(kaggler);
-  const bestResults = [...history]
+  const { kaggler, history, teammates } = data;
+  const bestResults = [...data.history]
     .sort((a, b) => getPercentile(a) - getPercentile(b))
     .slice(0, 3);
-  const currentIndex = kagglers.findIndex(
-    (candidate) => candidate.username === username,
-  );
-  const teammates = [
-    kagglers[(currentIndex + 1) % kagglers.length],
-    kagglers[(currentIndex + 4) % kagglers.length],
-    kagglers[(currentIndex + 7) % kagglers.length],
-  ];
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
       <div className="space-y-8">
-        <PreviewNotice />
+        <PreviewNotice source={data.source} updatedAt={data.updatedAt} />
 
         <section className="flex flex-col gap-6 border-b border-border/70 pb-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-5">
@@ -79,12 +67,13 @@ export default async function KagglerProfile({
                 {kaggler.displayName}
               </h1>
               <p className="mt-2 text-muted-foreground">
-                @{kaggler.username} · {kaggler.country}
+                @{kaggler.username}
+                {kaggler.country ? ` · ${kaggler.country}` : ""}
               </p>
             </div>
           </div>
           <Link
-            href="https://www.kaggle.com/"
+            href={`https://www.kaggle.com/${kaggler.username}`}
             className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:border-primary/40 hover:text-primary"
             target="_blank"
             rel="noreferrer"
@@ -101,12 +90,12 @@ export default async function KagglerProfile({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
             <Stat
               label="Official rank"
-              value={`#${kaggler.officialRank}`}
+              value={kaggler.officialRank ? `#${kaggler.officialRank}` : "—"}
               icon={Hash}
             />
             <Stat
               label="Peak rank"
-              value={`#${kaggler.highestRank}`}
+              value={kaggler.highestRank ? `#${kaggler.highestRank}` : "—"}
               icon={Trophy}
             />
             <Stat
@@ -116,7 +105,7 @@ export default async function KagglerProfile({
             />
             <Stat
               label="Registered"
-              value={String(kaggler.joinedYear)}
+              value={kaggler.joinedYear ? String(kaggler.joinedYear) : "—"}
               icon={CalendarDays}
             />
             <div className="col-span-2 flex min-h-24 flex-col justify-center rounded-xl border border-border bg-card/45 px-5">
@@ -140,7 +129,7 @@ export default async function KagglerProfile({
               </h2>
             </div>
             <p className="hidden font-mono text-xs text-muted-foreground sm:block">
-              Score version 0.1 preview
+              Score version 0.1
             </p>
           </div>
           <ProfileScoreGrid kaggler={kaggler} />
@@ -167,6 +156,11 @@ export default async function KagglerProfile({
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
+              {bestResults.length === 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No eligible results are available.
+                </p>
+              )}
               {bestResults.map((result, index) => (
                 <div
                   key={result.slug}
@@ -215,7 +209,12 @@ export default async function KagglerProfile({
             </div>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-3">
-            {teammates.map((teammate, index) => (
+            {teammates.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                No repeated teammates found.
+              </p>
+            )}
+            {teammates.map((teammate) => (
               <Link
                 key={teammate.username}
                 href={`/kagglers/${teammate.username}`}
@@ -227,7 +226,7 @@ export default async function KagglerProfile({
                     {teammate.displayName}
                   </span>
                   <span className="mt-1 block text-sm text-muted-foreground">
-                    {8 - index * 2} competitions
+                    {teammate.competitionCount} competitions
                   </span>
                 </span>
               </Link>

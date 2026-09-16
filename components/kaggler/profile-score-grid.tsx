@@ -8,22 +8,30 @@ export function ProfileScoreGrid({ kaggler }: { kaggler: Kaggler }) {
     {
       label: "Career Power",
       value: kaggler.careerPower,
-      rank: getRankForKaggler(kaggler.username, "overall"),
+      rank:
+        kaggler.careerRank ?? getRankForKaggler(kaggler.username, "overall"),
     },
     {
       label: "Solo Power",
       value: kaggler.soloPower,
-      rank: getRankForKaggler(kaggler.username, "solo"),
+      rank:
+        kaggler.soloRank === undefined
+          ? getRankForKaggler(kaggler.username, "solo")
+          : kaggler.soloRank,
     },
     {
       label: "Consistency",
       value: kaggler.consistency,
-      rank: getRankForKaggler(kaggler.username, "consistency"),
+      rank:
+        kaggler.consistencyRank === undefined
+          ? getRankForKaggler(kaggler.username, "consistency")
+          : kaggler.consistencyRank,
     },
     {
       label: "Momentum",
       value: kaggler.momentum,
-      rank: getRankForKaggler(kaggler.username, "momentum"),
+      rank:
+        kaggler.momentumRank ?? getRankForKaggler(kaggler.username, "momentum"),
     },
   ];
 
@@ -49,7 +57,7 @@ export function ProfileScoreGrid({ kaggler }: { kaggler: Kaggler }) {
                   {score.value.toFixed(1)}
                 </p>
                 <p className="mt-2 font-mono text-xs text-muted-foreground">
-                  Preview rank {score.rank ? `#${score.rank}` : "—"}
+                  Rank {score.rank ? `#${score.rank}` : "—"}
                 </p>
               </>
             )}

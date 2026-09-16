@@ -5,11 +5,14 @@ import { PreviewNotice } from "@/components/layout/preview-notice";
 import { RankingNav } from "@/components/rankings/ranking-nav";
 import { RankingTable } from "@/components/rankings/ranking-table";
 import {
-  getRanking,
-  isRankingKind,
-  rankingConfig,
-  rankingKinds,
-} from "@/lib/rankings";
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { getRankingPage } from "@/lib/data/kagglers";
+import { isRankingKind, rankingConfig, rankingKinds } from "@/lib/rankings";
 
 export function generateStaticParams() {
   return rankingKinds.map((kind) => ({ kind }));
@@ -32,14 +35,22 @@ export async function generateMetadata({
 
 export default async function RankingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ kind: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { kind } = await params;
   if (!isRankingKind(kind)) notFound();
 
   const config = rankingConfig[kind];
-  const ranking = getRanking(kind);
+  const query = await searchParams;
+  const requestedPage = Number.parseInt(query.page ?? "1", 10);
+  const data = await getRankingPage(
+    kind,
+    Number.isFinite(requestedPage) ? requestedPage : 1,
+  );
+  const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize));
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
@@ -52,21 +63,46 @@ export default async function RankingPage({
           />
           <RankingNav active={kind} />
         </div>
-        <PreviewNotice />
+        <PreviewNotice source={data.source} updatedAt={data.updatedAt} />
         <div>
           <div className="mb-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              {ranking.length} eligible Kagglers
+              {data.total} eligible Kagglers
             </p>
             <p className="font-mono text-xs text-muted-foreground">
-              Score version 0.1 preview
+              Score version 0.1
             </p>
           </div>
           <RankingTable
-            kagglers={ranking}
+            kagglers={data.kagglers}
             metric={config.metric}
             metricLabel={config.metricLabel}
           />
+          {totalPages > 1 && (
+            <Pagination className="mt-6">
+              <PaginationContent>
+                {data.page > 1 && (
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href={`/rankings/${kind}?page=${data.page - 1}`}
+                    />
+                  </PaginationItem>
+                )}
+                <PaginationItem>
+                  <span className="px-3 font-mono text-sm text-muted-foreground">
+                    Page {Math.min(data.page, totalPages)} of {totalPages}
+                  </span>
+                </PaginationItem>
+                {data.page < totalPages && (
+                  <PaginationItem>
+                    <PaginationNext
+                      href={`/rankings/${kind}?page=${data.page + 1}`}
+                    />
+                  </PaginationItem>
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </div>
     </main>

@@ -1,6 +1,14 @@
 import type { Kaggler } from "@/seed/kagglers";
 
 export function SpecialtyBars({ kaggler }: { kaggler: Kaggler }) {
+  if (kaggler.specialties.length === 0) {
+    return (
+      <p className="text-sm leading-6 text-muted-foreground">
+        Specialty scores are not available for this Kaggler yet.
+      </p>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {kaggler.specialties.map((specialty) => (

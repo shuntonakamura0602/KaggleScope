@@ -30,6 +30,14 @@ export function CompetitionHistory({
 }: {
   results: CompetitionResult[];
 }) {
+  if (results.length === 0) {
+    return (
+      <div className="rounded-xl border border-border bg-card/45 px-5 py-10 text-center text-sm text-muted-foreground">
+        No eligible competition results are available.
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-border md:block">

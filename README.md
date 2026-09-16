@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 5 provides the production scoring pipeline while the UI continues to use 20 fictional Kagglers:
+Part 6 connects the production data model to the web experience:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -19,8 +19,12 @@ Part 5 provides the production scoring pipeline while the UI continues to use 20
 - Valid Competition Result generation with Private Rank priority and Public Rank fallback
 - Career, Solo, Consistency, and Momentum calculations using score version `0.1`
 - Idempotent score upserts and daily ranking snapshots
+- Server-side PostgreSQL queries for home, rankings, and Kaggler profiles
+- 50-row ranking pagination and stored score-rank display
+- Competition history, specialty score, and frequent-teammate queries
+- Explicit fictional preview fallback when `DATABASE_URL` is not configured
 
-Specialty classification, search behavior, and live UI data are intentionally deferred to later implementation parts.
+Specialty classification and interactive search behavior are intentionally deferred to later implementation parts.
 
 ## Stack
 
@@ -102,7 +106,9 @@ npm run db:seed     # upsert the 20 preview Kagglers and their scores
 npm run db:studio   # inspect the configured database
 ```
 
-Migration files under `db/migrations` are committed and must remain immutable after they have been applied to a shared database. The PostgreSQL client is intended for a Node.js server runtime and is not imported by the current static pages.
+Migration files under `db/migrations` are committed and must remain immutable after they have been applied to a shared database. The PostgreSQL client is used only by server-rendered data routes and requires a Node.js server runtime.
+
+When `DATABASE_URL` is configured, the home page, ranking pages, and Kaggler profiles query the processed PostgreSQL tables on the server. Without it, the same routes visibly fall back to the 20 fictional preview records so local development and CI remain deterministic. A configured database error is surfaced instead of silently showing preview data.
 
 ## Data and methodology
 

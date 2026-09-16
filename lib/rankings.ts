@@ -74,6 +74,16 @@ export function getMetricValue(kaggler: Kaggler, metric: RankingMetric) {
   return kaggler[metric] ?? 0;
 }
 
+export function getMetricRank(
+  kaggler: Kaggler,
+  metric: RankingMetric,
+): number | null | undefined {
+  if (metric === "careerPower") return kaggler.careerRank;
+  if (metric === "momentum") return kaggler.momentumRank;
+  if (metric === "soloPower") return kaggler.soloRank;
+  return kaggler.consistencyRank;
+}
+
 export function getRankForKaggler(
   username: string,
   kind: RankingKind,

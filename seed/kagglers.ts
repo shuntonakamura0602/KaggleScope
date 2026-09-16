@@ -13,17 +13,21 @@ export type Kaggler = {
   username: string;
   displayName: string;
   tier: "Grandmaster" | "Master" | "Expert";
-  country: string;
-  officialRank: number;
-  highestRank: number;
+  country: string | null;
+  officialRank: number | null;
+  highestRank: number | null;
   careerPower: number;
   soloPower: number | null;
-  consistency: number;
+  consistency: number | null;
   momentum: number;
   competitionCount: number;
   medals: { gold: number; silver: number; bronze: number };
-  specialties: { name: SpecialtyName; score: number }[];
-  joinedYear: number;
+  specialties: { name: string; score: number }[];
+  joinedYear: number | null;
+  careerRank?: number;
+  soloRank?: number | null;
+  consistencyRank?: number | null;
+  momentumRank?: number;
 };
 
 export const kagglers: Kaggler[] = [
