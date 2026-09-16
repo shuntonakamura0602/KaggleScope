@@ -6,9 +6,11 @@ import {
   countDistinct,
   desc,
   eq,
+  ilike,
   isNotNull,
   max,
   ne,
+  or,
   sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -45,6 +47,13 @@ export type Teammate = {
   username: string;
   displayName: string;
   competitionCount: number;
+};
+
+export type KagglerSearchResult = {
+  username: string;
+  displayName: string;
+  tier: Kaggler["tier"];
+  officialRank: number | null;
 };
 
 export type HomeData = DataStatus & {
@@ -123,6 +132,20 @@ function tierName(tier: number | null): Kaggler["tier"] {
   return "Expert";
 }
 
+function searchPriority(kaggler: KagglerSearchResult, query: string) {
+  const username = kaggler.username.toLocaleLowerCase();
+  const displayName = kaggler.displayName.toLocaleLowerCase();
+
+  if (username === query) return 0;
+  if (username.startsWith(query)) return 1;
+  if (displayName.startsWith(query)) return 2;
+  return 3;
+}
+
+function escapeLikePattern(value: string) {
+  return value.replace(/[\\%_]/g, "\\$&");
+}
+
 function toKaggler(
   row: SummaryRow,
   profileSpecialties: Kaggler["specialties"] = [],
@@ -194,6 +217,77 @@ async function latestCalculation() {
 
 function previewStatus(): DataStatus {
   return { source: "preview", updatedAt: null };
+}
+
+export async function searchKagglers(
+  rawQuery: string,
+  limit = 10,
+): Promise<KagglerSearchResult[]> {
+  const query = rawQuery.trim().toLocaleLowerCase().slice(0, 100);
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 10);
+  if (!query) return [];
+
+  if (!isDatabaseConfigured()) {
+    return previewKagglers
+      .filter((kaggler) => {
+        const username = kaggler.username.toLocaleLowerCase();
+        const displayName = kaggler.displayName.toLocaleLowerCase();
+        return username.includes(query) || displayName.includes(query);
+      })
+      .map(({ username, displayName, tier, officialRank }) => ({
+        username,
+        displayName,
+        tier,
+        officialRank,
+      }))
+      .sort((a, b) => {
+        const priorityDifference =
+          searchPriority(a, query) - searchPriority(b, query);
+        if (priorityDifference !== 0) return priorityDifference;
+
+        const rankA = a.officialRank ?? Number.MAX_SAFE_INTEGER;
+        const rankB = b.officialRank ?? Number.MAX_SAFE_INTEGER;
+        return rankA - rankB || a.username.localeCompare(b.username);
+      })
+      .slice(0, safeLimit);
+  }
+
+  const db = await database();
+  const escapedQuery = escapeLikePattern(query);
+  const prefixPattern = `${escapedQuery}%`;
+  const partialPattern = `%${escapedQuery}%`;
+  const rows = await db
+    .select({
+      username: kagglerTable.username,
+      displayName: kagglerTable.displayName,
+      competitionTier: kagglerTable.competitionTier,
+      officialRank: kagglerTable.officialRank,
+    })
+    .from(kagglerTable)
+    .where(
+      or(
+        ilike(kagglerTable.username, partialPattern),
+        ilike(kagglerTable.displayName, partialPattern),
+      ),
+    )
+    .orderBy(
+      sql`case
+        when lower(${kagglerTable.username}) = ${query} then 0
+        when lower(${kagglerTable.username}) like ${prefixPattern} then 1
+        when lower(coalesce(${kagglerTable.displayName}, '')) like ${prefixPattern} then 2
+        else 3
+      end`,
+      sql`${kagglerTable.officialRank} asc nulls last`,
+      asc(kagglerTable.username),
+    )
+    .limit(safeLimit);
+
+  return rows.map((row) => ({
+    username: row.username,
+    displayName: row.displayName || row.username,
+    tier: tierName(row.competitionTier),
+    officialRank: row.officialRank,
+  }));
 }
 
 export const getHomeData = cache(async (): Promise<HomeData> => {

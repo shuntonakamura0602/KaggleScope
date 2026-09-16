@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Activity, ArrowRight, Compass, Search, Sparkles } from "lucide-react";
+import { Activity, ArrowRight, Compass, Sparkles } from "lucide-react";
 import { AvatarMark } from "@/components/kaggler/avatar-mark";
 import { MedalCounts } from "@/components/kaggler/medal-counts";
+import { KagglerSearch } from "@/components/search/kaggler-search";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getHomeData } from "@/lib/data/kagglers";
 import { specialties } from "@/seed/kagglers";
 
@@ -27,24 +27,7 @@ export default async function Home() {
           </p>
 
           <div className="mt-9 max-w-2xl">
-            <label htmlFor="kaggler-search" className="sr-only">
-              Search Kagglers
-            </label>
-            <div className="group flex items-center rounded-2xl border border-border bg-card/85 p-2 shadow-[0_24px_80px_rgb(0_0_0/22%)] transition-colors focus-within:border-primary/60">
-              <Search
-                className="ml-3 size-5 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <Input
-                id="kaggler-search"
-                type="search"
-                placeholder="Search Kagglers..."
-                className="h-12 border-0 bg-transparent text-base shadow-none focus-visible:ring-0"
-              />
-              <span className="hidden rounded-lg bg-secondary px-3 py-2 font-mono text-xs text-muted-foreground sm:block">
-                {data.source === "database" ? "Database" : "Preview"}
-              </span>
-            </div>
+            <KagglerSearch source={data.source} />
             <p className="mt-3 text-sm text-muted-foreground">
               {data.source === "database"
                 ? `${data.kagglerCount.toLocaleString()} processed Kagglers${data.updatedAt ? ` · Calculated ${new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(data.updatedAt)}` : ""}`

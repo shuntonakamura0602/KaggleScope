@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 6 connects the production data model to the web experience:
+Part 7 adds interactive Kaggler search to the database-backed web experience:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -23,8 +23,9 @@ Part 6 connects the production data model to the web experience:
 - 50-row ranking pagination and stored score-rank display
 - Competition history, specialty score, and frequent-teammate queries
 - Explicit fictional preview fallback when `DATABASE_URL` is not configured
+- Debounced Kaggler autocomplete with ranked username/display-name matching
 
-Specialty classification and interactive search behavior are intentionally deferred to later implementation parts.
+Specialty classification, comparison, and methodology pages are intentionally deferred to later implementation parts.
 
 ## Stack
 
