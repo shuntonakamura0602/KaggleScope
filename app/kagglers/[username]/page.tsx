@@ -17,7 +17,7 @@ import { SpecialtyBars } from "@/components/kaggler/specialty-bars";
 import { PreviewNotice } from "@/components/layout/preview-notice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKagglerProfileData } from "@/lib/data/kagglers";
-import { getPercentile } from "@/seed/competitions";
+import { getPercentile, getResultScore } from "@/seed/competitions";
 
 export async function generateMetadata({
   params,
@@ -45,8 +45,8 @@ export default async function KagglerProfile({
 
   const { kaggler, history, teammates } = data;
   const bestResults = [...data.history]
-    .sort((a, b) => getPercentile(a) - getPercentile(b))
-    .slice(0, 3);
+    .sort((a, b) => getResultScore(b) - getResultScore(a))
+    .slice(0, 5);
 
   return (
     <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-[90rem] px-4 py-10 sm:px-6 sm:py-14 lg:px-10">
@@ -152,7 +152,7 @@ export default async function KagglerProfile({
             <CardHeader>
               <CardTitle className="text-xl">Best performances</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Strongest finishes by percentile
+                Strongest results using the v0.1 Result Score
               </p>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -177,8 +177,13 @@ export default async function KagglerProfile({
                       #{result.rank} of {result.teams.toLocaleString()}
                     </span>
                   </span>
-                  <span className="font-mono text-sm text-primary">
-                    Top {getPercentile(result).toFixed(1)}%
+                  <span className="text-right">
+                    <span className="block font-mono text-sm text-primary">
+                      {getResultScore(result).toFixed(1)}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Top {getPercentile(result).toFixed(1)}%
+                    </span>
                   </span>
                 </div>
               ))}

@@ -19,7 +19,7 @@ export default function NotFound() {
           </EmptyMedia>
           <EmptyTitle>Kaggler not found</EmptyTitle>
           <EmptyDescription>
-            This profile is not included in the current preview dataset.
+            This profile is not included in the current KaggleScope dataset.
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
@@ -27,7 +27,7 @@ export default function NotFound() {
             href="/rankings/overall"
             className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Browse preview ranking
+            Browse overall ranking
           </Link>
         </EmptyContent>
       </Empty>

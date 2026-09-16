@@ -1,11 +1,15 @@
 import Link from "next/link";
-import { BarChart3, Home, UserRound } from "lucide-react";
+import { BarChart3, Home, Shapes } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 
 const navigation = [
   { label: "Home", href: "/", icon: Home },
   { label: "Rankings", href: "/rankings/overall", icon: BarChart3 },
-  { label: "Kaggler", href: "/kagglers/metricmuse", icon: UserRound },
+  {
+    label: "Specialties",
+    href: "/specialties/computer-vision",
+    icon: Shapes,
+  },
 ];
 
 export function SiteHeader() {

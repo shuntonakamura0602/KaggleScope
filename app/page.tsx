@@ -189,7 +189,14 @@ export default async function Home() {
                 />
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="font-semibold">{specialty.name}</h3>
+                    <h3 className="font-semibold">
+                      <Link
+                        href={`/specialties/${specialty.slug}`}
+                        className="rounded-sm hover:text-primary"
+                      >
+                        {specialty.name}
+                      </Link>
+                    </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
                       {specialtyData.eligibleCount} ranked Kagglers
                     </p>
@@ -220,6 +227,14 @@ export default async function Home() {
                         .find((item) => item.name === specialty.name)
                         ?.score.toFixed(1)}
                     </span>
+                  </Link>
+                )}
+                {!leader && (
+                  <Link
+                    href={`/specialties/${specialty.slug}`}
+                    className="mt-7 block border-t border-border/60 pt-4 text-sm font-medium text-primary"
+                  >
+                    View specialty ranking
                   </Link>
                 )}
               </article>

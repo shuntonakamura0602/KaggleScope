@@ -8,6 +8,11 @@ export const specialties = [
 ] as const;
 
 export type SpecialtyName = (typeof specialties)[number]["name"];
+export type Specialty = (typeof specialties)[number];
+
+export function getSpecialtyBySlug(slug: string) {
+  return specialties.find((specialty) => specialty.slug === slug);
+}
 
 export type Kaggler = {
   username: string;

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { Shapes } from "lucide-react";
 import { AvatarMark } from "@/components/kaggler/avatar-mark";
 import { MedalCounts } from "@/components/kaggler/medal-counts";
 import {
@@ -17,32 +17,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  getMetricRank,
-  getMetricValue,
-  type RankingMetric,
-} from "@/lib/rankings";
-import type { Kaggler } from "@/seed/kagglers";
+import type { SpecialtyRankingEntry } from "@/lib/data/kagglers";
 
-export function RankingTable({
-  kagglers,
-  metric,
-  metricLabel,
+export function SpecialtyRankingTable({
+  entries,
+  specialtyName,
 }: {
-  kagglers: Kaggler[];
-  metric: RankingMetric;
-  metricLabel: string;
+  entries: SpecialtyRankingEntry[];
+  specialtyName: string;
 }) {
-  if (kagglers.length === 0) {
+  if (entries.length === 0) {
     return (
       <Empty className="min-h-80 border border-border bg-card/40">
         <EmptyHeader>
           <EmptyMedia variant="icon">
-            <Trophy aria-hidden="true" />
+            <Shapes aria-hidden="true" />
           </EmptyMedia>
           <EmptyTitle>No eligible Kagglers</EmptyTitle>
           <EmptyDescription>
-            No one in the current dataset meets the ranking requirements.
+            No Kaggler has enough {specialtyName} results to be ranked yet.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -60,48 +53,44 @@ export function RankingTable({
               </TableHead>
               <TableHead>Kaggler</TableHead>
               <TableHead>Tier</TableHead>
-              <TableHead>Official</TableHead>
-              <TableHead>Medals</TableHead>
-              <TableHead>Competitions</TableHead>
-              <TableHead className="pr-5 text-right">{metricLabel}</TableHead>
+              <TableHead>Specialty results</TableHead>
+              <TableHead>Specialty medals</TableHead>
+              <TableHead className="pr-5 text-right">Power</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {kagglers.map((kaggler, index) => (
-              <TableRow key={kaggler.username}>
+            {entries.map((entry) => (
+              <TableRow key={entry.kaggler.username}>
                 <TableCell className="pl-5 font-mono text-muted-foreground">
-                  {getMetricRank(kaggler, metric) ?? index + 1}
+                  {entry.rank}
                 </TableCell>
                 <TableCell>
                   <Link
-                    href={`/kagglers/${kaggler.username}`}
+                    href={`/kagglers/${entry.kaggler.username}`}
                     className="flex w-fit items-center gap-3 rounded-lg hover:text-primary"
                   >
-                    <AvatarMark name={kaggler.displayName} />
+                    <AvatarMark name={entry.kaggler.displayName} />
                     <span>
                       <span className="block font-medium">
-                        {kaggler.displayName}
+                        {entry.kaggler.displayName}
                       </span>
                       <span className="block text-sm text-muted-foreground">
-                        @{kaggler.username}
+                        @{entry.kaggler.username}
                       </span>
                     </span>
                   </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {kaggler.tier}
+                  {entry.kaggler.tier}
                 </TableCell>
                 <TableCell className="font-mono">
-                  {kaggler.officialRank ? `#${kaggler.officialRank}` : "—"}
+                  {entry.competitionCount ?? "—"}
                 </TableCell>
                 <TableCell>
-                  <MedalCounts medals={kaggler.medals} />
-                </TableCell>
-                <TableCell className="font-mono">
-                  {kaggler.competitionCount}
+                  {entry.medals ? <MedalCounts medals={entry.medals} /> : "—"}
                 </TableCell>
                 <TableCell className="pr-5 text-right font-mono text-lg font-semibold text-primary">
-                  {getMetricValue(kaggler, metric).toFixed(1)}
+                  {entry.score.toFixed(1)}
                 </TableCell>
               </TableRow>
             ))}
@@ -110,41 +99,41 @@ export function RankingTable({
       </div>
 
       <ol className="space-y-3 md:hidden">
-        {kagglers.map((kaggler, index) => (
-          <li key={kaggler.username}>
+        {entries.map((entry) => (
+          <li key={entry.kaggler.username}>
             <Link
-              href={`/kagglers/${kaggler.username}`}
+              href={`/kagglers/${entry.kaggler.username}`}
               className="block rounded-xl border border-border bg-card/60 p-4 transition-colors hover:border-primary/30"
             >
               <div className="flex items-center gap-3">
                 <span className="w-6 font-mono text-sm text-muted-foreground">
-                  {getMetricRank(kaggler, metric) ?? index + 1}
+                  {entry.rank}
                 </span>
-                <AvatarMark name={kaggler.displayName} />
+                <AvatarMark name={entry.kaggler.displayName} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">
-                    {kaggler.displayName}
+                    {entry.kaggler.displayName}
                   </span>
                   <span className="block truncate text-sm text-muted-foreground">
-                    @{kaggler.username} · {kaggler.tier}
+                    @{entry.kaggler.username} · {entry.kaggler.tier}
                   </span>
                 </span>
                 <span className="text-right">
                   <span className="block font-mono text-lg font-semibold text-primary">
-                    {getMetricValue(kaggler, metric).toFixed(1)}
+                    {entry.score.toFixed(1)}
                   </span>
                   <span className="block text-xs text-muted-foreground">
-                    {metricLabel}
+                    {specialtyName} Power
                   </span>
                 </span>
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-3">
-                <MedalCounts medals={kaggler.medals} />
-                <span className="font-mono text-xs text-muted-foreground">
-                  {kaggler.officialRank
-                    ? `Official #${kaggler.officialRank}`
-                    : "Official rank —"}
+                <span className="text-sm text-muted-foreground">
+                  {entry.competitionCount === null
+                    ? "Preview result count unavailable"
+                    : `${entry.competitionCount} eligible results`}
                 </span>
+                {entry.medals && <MedalCounts medals={entry.medals} />}
               </div>
             </Link>
           </li>

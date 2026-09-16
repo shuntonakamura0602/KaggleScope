@@ -9,6 +9,7 @@ export type CompetitionResult = {
   medal: "Gold" | "Silver" | "Bronze" | null;
   teamSize: number;
   specialty: string;
+  resultScore?: number;
 };
 
 const competitionTemplates: Omit<CompetitionResult, "rank">[] = [
@@ -90,4 +91,24 @@ export function getCompetitionHistory(kaggler: Kaggler): CompetitionResult[] {
 
 export function getPercentile(result: CompetitionResult) {
   return (result.rank / result.teams) * 100;
+}
+
+export function getResultScore(result: CompetitionResult) {
+  if (result.resultScore !== undefined) return result.resultScore;
+
+  const percentile = result.rank / result.teams;
+  const placementScore = 100 * (1 - percentile) ** 2;
+  const medalBonus =
+    result.medal === "Gold"
+      ? 30
+      : result.medal === "Silver"
+        ? 15
+        : result.medal === "Bronze"
+          ? 5
+          : 0;
+  const sizeWeight = Math.min(
+    1.25,
+    Math.max(0.5, Math.log10(Math.max(result.teams, 10)) / 3),
+  );
+  return (placementScore + medalBonus) * sizeWeight;
 }

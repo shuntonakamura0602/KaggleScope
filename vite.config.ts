@@ -71,7 +71,13 @@ export default defineConfig(async () => {
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,
-        config: localBindingConfig,
+        config: {
+          ...localBindingConfig,
+          ...(process.env.NODE_ENV === "development" &&
+          process.env.REVALIDATE_SECRET
+            ? { vars: { REVALIDATE_SECRET: process.env.REVALIDATE_SECRET } }
+            : {}),
+        },
       }),
     ],
   };

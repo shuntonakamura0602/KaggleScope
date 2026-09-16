@@ -23,6 +23,7 @@ import {
   specialtyScores,
   teamMembers,
 } from "@/db/schema";
+import { cacheDataQuery } from "@/lib/data/cache";
 import { isDatabaseConfigured } from "@/lib/db/env";
 import { getRanking, type RankingKind } from "@/lib/rankings";
 import {
@@ -31,9 +32,11 @@ import {
 } from "@/seed/competitions";
 import {
   getKaggler,
+  getSpecialtyBySlug,
   kagglers as previewKagglers,
   specialties,
   type Kaggler,
+  type Specialty,
 } from "@/seed/kagglers";
 
 export type DataSource = "database" | "preview";
@@ -69,6 +72,22 @@ export type HomeData = DataStatus & {
 
 export type RankingPageData = DataStatus & {
   kagglers: Kaggler[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
+export type SpecialtyRankingEntry = {
+  kaggler: Kaggler;
+  score: number;
+  rank: number;
+  competitionCount: number | null;
+  medals: { gold: number; silver: number; bronze: number } | null;
+};
+
+export type SpecialtyRankingPageData = DataStatus & {
+  specialty: Specialty;
+  entries: SpecialtyRankingEntry[];
   total: number;
   page: number;
   pageSize: number;
@@ -290,7 +309,7 @@ export async function searchKagglers(
   }));
 }
 
-export const getHomeData = cache(async (): Promise<HomeData> => {
+const getHomeDataQuery = async (): Promise<HomeData> => {
   if (!isDatabaseConfigured()) {
     const medalTotals = previewKagglers.reduce(
       (totals, kaggler) => ({
@@ -399,181 +418,296 @@ export const getHomeData = cache(async (): Promise<HomeData> => {
     },
     specialtyLeaders: Object.fromEntries(specialtyEntries),
   };
-});
+};
 
-export const getRankingPage = cache(
-  async (kind: RankingKind, requestedPage = 1): Promise<RankingPageData> => {
-    const page = Math.max(1, Math.floor(requestedPage));
-    if (!isDatabaseConfigured()) {
-      const ranking = getRanking(kind);
-      const totalPages = Math.max(1, Math.ceil(ranking.length / PAGE_SIZE));
-      const safePage = Math.min(page, totalPages);
-      const start = (safePage - 1) * PAGE_SIZE;
-      return {
-        ...previewStatus(),
-        kagglers: ranking.slice(start, start + PAGE_SIZE),
-        total: ranking.length,
-        page: safePage,
-        pageSize: PAGE_SIZE,
-      };
-    }
+export const getHomeData = cache(
+  cacheDataQuery(getHomeDataQuery, ["home-data"]),
+);
 
-    const db = await database();
-    const [totalRows, updatedAt] = await Promise.all([
-      db
-        .select({ value: count() })
-        .from(kagglerTable)
-        .innerJoin(kagglerScores, eq(kagglerScores.kagglerId, kagglerTable.id))
-        .where(eligibility(kind)),
-      latestCalculation(),
-    ]);
-    const total = totalRows[0]?.value ?? 0;
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+const getRankingPageQuery = async (
+  kind: RankingKind,
+  requestedPage = 1,
+): Promise<RankingPageData> => {
+  const page = Math.max(1, Math.floor(requestedPage));
+  if (!isDatabaseConfigured()) {
+    const ranking = getRanking(kind);
+    const totalPages = Math.max(1, Math.ceil(ranking.length / PAGE_SIZE));
     const safePage = Math.min(page, totalPages);
-    const rows = await databaseSummaries(
-      kind,
-      PAGE_SIZE,
-      (safePage - 1) * PAGE_SIZE,
-    );
+    const start = (safePage - 1) * PAGE_SIZE;
     return {
-      source: "database",
-      updatedAt,
-      kagglers: rows,
-      total,
+      ...previewStatus(),
+      kagglers: ranking.slice(start, start + PAGE_SIZE),
+      total: ranking.length,
       page: safePage,
       pageSize: PAGE_SIZE,
     };
-  },
-);
+  }
 
-export const getKagglerProfileData = cache(
-  async (username: string): Promise<KagglerProfileData | null> => {
-    if (!isDatabaseConfigured()) {
-      const kaggler = getKaggler(username);
-      if (!kaggler) return null;
-      const index = previewKagglers.findIndex(
-        (candidate) => candidate.username === username,
-      );
-      return {
-        ...previewStatus(),
-        kaggler,
-        history: getCompetitionHistory(kaggler),
-        teammates: [1, 4, 7].map((distance, teammateIndex) => {
-          const teammate =
-            previewKagglers[(index + distance) % previewKagglers.length];
-          return {
-            username: teammate.username,
-            displayName: teammate.displayName,
-            competitionCount: 8 - teammateIndex * 2,
-          };
-        }),
-      };
-    }
-
-    const db = await database();
-    const [row] = await db
-      .select(summarySelection)
+  const db = await database();
+  const [totalRows, updatedAt] = await Promise.all([
+    db
+      .select({ value: count() })
       .from(kagglerTable)
       .innerJoin(kagglerScores, eq(kagglerScores.kagglerId, kagglerTable.id))
-      .where(eq(kagglerTable.username, username))
-      .limit(1);
-    if (!row) return null;
+      .where(eligibility(kind)),
+    latestCalculation(),
+  ]);
+  const total = totalRows[0]?.value ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const rows = await databaseSummaries(
+    kind,
+    PAGE_SIZE,
+    (safePage - 1) * PAGE_SIZE,
+  );
+  return {
+    source: "database",
+    updatedAt,
+    kagglers: rows,
+    total,
+    page: safePage,
+    pageSize: PAGE_SIZE,
+  };
+};
 
-    const mine = alias(teamMembers, "mine");
-    const peer = alias(teamMembers, "peer");
-    const [specialtyRows, resultRows, teammateRows, updatedAt] =
-      await Promise.all([
-        db
-          .select({
-            name: specialtyScores.specialty,
-            score: specialtyScores.score,
-          })
-          .from(specialtyScores)
-          .where(eq(specialtyScores.kagglerId, row.id))
-          .orderBy(desc(specialtyScores.score)),
-        db
-          .select({
-            competitionId: competitions.id,
-            slug: competitions.slug,
-            title: competitions.title,
-            resultDate: competitionResults.resultDate,
-            finalRank: competitionResults.finalRank,
-            totalTeams: competitionResults.totalTeams,
-            medal: competitionResults.medal,
-            teamSize: competitionResults.teamSize,
-            specialty: competitionSpecialties.specialty,
-          })
-          .from(competitionResults)
-          .innerJoin(
-            competitions,
-            eq(competitions.id, competitionResults.competitionId),
-          )
-          .leftJoin(
-            competitionSpecialties,
-            eq(competitionSpecialties.competitionId, competitions.id),
-          )
-          .where(eq(competitionResults.kagglerId, row.id))
-          .orderBy(desc(competitionResults.resultDate)),
-        db
-          .select({
-            username: kagglerTable.username,
-            displayName: kagglerTable.displayName,
-            competitionCount: countDistinct(peer.teamId),
-          })
-          .from(mine)
-          .innerJoin(
-            peer,
-            and(
-              eq(peer.teamId, mine.teamId),
-              ne(peer.kagglerId, mine.kagglerId),
-            ),
-          )
-          .innerJoin(kagglerTable, eq(kagglerTable.id, peer.kagglerId))
-          .where(eq(mine.kagglerId, row.id))
-          .groupBy(
-            kagglerTable.id,
-            kagglerTable.username,
-            kagglerTable.displayName,
-          )
-          .orderBy(desc(countDistinct(peer.teamId)))
-          .limit(3),
-        latestCalculation(),
-      ]);
+export const getRankingPage = cache(
+  cacheDataQuery(getRankingPageQuery, ["ranking-page"]),
+);
 
-    const resultByCompetition = new Map<number, CompetitionResult>();
-    for (const result of resultRows) {
-      if (resultByCompetition.has(result.competitionId)) continue;
-      resultByCompetition.set(result.competitionId, {
-        slug: result.slug,
-        title: result.title,
-        date: new Intl.DateTimeFormat("en", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-          timeZone: "UTC",
-        }).format(result.resultDate),
-        rank: result.finalRank,
-        teams: result.totalTeams,
-        medal: result.medal as CompetitionResult["medal"],
-        teamSize: result.teamSize,
-        specialty: result.specialty ?? "Other",
-      });
-    }
+const getSpecialtyRankingPageQuery = async (
+  slug: string,
+  requestedPage = 1,
+): Promise<SpecialtyRankingPageData | null> => {
+  const specialty = getSpecialtyBySlug(slug);
+  if (!specialty) return null;
 
-    const profileSpecialties = specialtyRows.map((specialty) => ({
-      name: specialty.name,
-      score: specialty.score,
-    }));
+  const page = Math.max(1, Math.floor(requestedPage));
+  if (!isDatabaseConfigured()) {
+    const ranking = previewKagglers
+      .map((kaggler) => ({
+        kaggler,
+        specialty: kaggler.specialties.find(
+          (item) => item.name === specialty.name,
+        ),
+      }))
+      .filter(
+        (
+          entry,
+        ): entry is {
+          kaggler: Kaggler;
+          specialty: { name: string; score: number };
+        } => Boolean(entry.specialty),
+      )
+      .sort((a, b) => b.specialty.score - a.specialty.score);
+    const totalPages = Math.max(1, Math.ceil(ranking.length / PAGE_SIZE));
+    const safePage = Math.min(page, totalPages);
+    const start = (safePage - 1) * PAGE_SIZE;
     return {
-      source: "database",
-      updatedAt,
-      kaggler: toKaggler(row, profileSpecialties),
-      history: [...resultByCompetition.values()],
-      teammates: teammateRows.map((teammate) => ({
-        username: teammate.username,
-        displayName: teammate.displayName || teammate.username,
-        competitionCount: teammate.competitionCount,
+      ...previewStatus(),
+      specialty,
+      entries: ranking.slice(start, start + PAGE_SIZE).map((entry, index) => ({
+        kaggler: entry.kaggler,
+        score: entry.specialty.score,
+        rank: start + index + 1,
+        competitionCount: null,
+        medals: null,
       })),
+      total: ranking.length,
+      page: safePage,
+      pageSize: PAGE_SIZE,
     };
-  },
+  }
+
+  const db = await database();
+  const [totalRows, updatedRows] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(specialtyScores)
+      .where(eq(specialtyScores.specialty, specialty.name)),
+    db
+      .select({ value: max(specialtyScores.calculatedAt) })
+      .from(specialtyScores)
+      .where(eq(specialtyScores.specialty, specialty.name)),
+  ]);
+  const total = totalRows[0]?.value ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const rows = await db
+    .select({
+      ...summarySelection,
+      specialtyScore: specialtyScores.score,
+      specialtyRank: specialtyScores.rank,
+      specialtyCompetitionCount: specialtyScores.competitionCount,
+      specialtyGoldCount: specialtyScores.goldCount,
+      specialtySilverCount: specialtyScores.silverCount,
+      specialtyBronzeCount: specialtyScores.bronzeCount,
+    })
+    .from(specialtyScores)
+    .innerJoin(kagglerTable, eq(kagglerTable.id, specialtyScores.kagglerId))
+    .innerJoin(kagglerScores, eq(kagglerScores.kagglerId, kagglerTable.id))
+    .where(eq(specialtyScores.specialty, specialty.name))
+    .orderBy(asc(specialtyScores.rank))
+    .limit(PAGE_SIZE)
+    .offset((safePage - 1) * PAGE_SIZE);
+
+  return {
+    source: "database",
+    updatedAt: updatedRows[0]?.value ?? null,
+    specialty,
+    entries: rows.map((row) => ({
+      kaggler: toKaggler(row, [
+        { name: specialty.name, score: row.specialtyScore },
+      ]),
+      score: row.specialtyScore,
+      rank: row.specialtyRank,
+      competitionCount: row.specialtyCompetitionCount,
+      medals: {
+        gold: row.specialtyGoldCount,
+        silver: row.specialtySilverCount,
+        bronze: row.specialtyBronzeCount,
+      },
+    })),
+    total,
+    page: safePage,
+    pageSize: PAGE_SIZE,
+  };
+};
+
+export const getSpecialtyRankingPage = cache(
+  cacheDataQuery(getSpecialtyRankingPageQuery, ["specialty-ranking-page"]),
+);
+
+const getKagglerProfileDataQuery = async (
+  username: string,
+): Promise<KagglerProfileData | null> => {
+  if (!isDatabaseConfigured()) {
+    const kaggler = getKaggler(username);
+    if (!kaggler) return null;
+    const index = previewKagglers.findIndex(
+      (candidate) => candidate.username === username,
+    );
+    return {
+      ...previewStatus(),
+      kaggler,
+      history: getCompetitionHistory(kaggler),
+      teammates: [1, 4, 7].map((distance, teammateIndex) => {
+        const teammate =
+          previewKagglers[(index + distance) % previewKagglers.length];
+        return {
+          username: teammate.username,
+          displayName: teammate.displayName,
+          competitionCount: 8 - teammateIndex * 2,
+        };
+      }),
+    };
+  }
+
+  const db = await database();
+  const [row] = await db
+    .select(summarySelection)
+    .from(kagglerTable)
+    .innerJoin(kagglerScores, eq(kagglerScores.kagglerId, kagglerTable.id))
+    .where(eq(kagglerTable.username, username))
+    .limit(1);
+  if (!row) return null;
+
+  const mine = alias(teamMembers, "mine");
+  const peer = alias(teamMembers, "peer");
+  const [specialtyRows, resultRows, teammateRows, updatedAt] =
+    await Promise.all([
+      db
+        .select({
+          name: specialtyScores.specialty,
+          score: specialtyScores.score,
+        })
+        .from(specialtyScores)
+        .where(eq(specialtyScores.kagglerId, row.id))
+        .orderBy(desc(specialtyScores.score)),
+      db
+        .select({
+          competitionId: competitions.id,
+          slug: competitions.slug,
+          title: competitions.title,
+          resultDate: competitionResults.resultDate,
+          finalRank: competitionResults.finalRank,
+          totalTeams: competitionResults.totalTeams,
+          medal: competitionResults.medal,
+          teamSize: competitionResults.teamSize,
+          resultScore: competitionResults.resultScore,
+          specialty: competitionSpecialties.specialty,
+        })
+        .from(competitionResults)
+        .innerJoin(
+          competitions,
+          eq(competitions.id, competitionResults.competitionId),
+        )
+        .leftJoin(
+          competitionSpecialties,
+          eq(competitionSpecialties.competitionId, competitions.id),
+        )
+        .where(eq(competitionResults.kagglerId, row.id))
+        .orderBy(desc(competitionResults.resultDate)),
+      db
+        .select({
+          username: kagglerTable.username,
+          displayName: kagglerTable.displayName,
+          competitionCount: countDistinct(peer.teamId),
+        })
+        .from(mine)
+        .innerJoin(
+          peer,
+          and(eq(peer.teamId, mine.teamId), ne(peer.kagglerId, mine.kagglerId)),
+        )
+        .innerJoin(kagglerTable, eq(kagglerTable.id, peer.kagglerId))
+        .where(eq(mine.kagglerId, row.id))
+        .groupBy(
+          kagglerTable.id,
+          kagglerTable.username,
+          kagglerTable.displayName,
+        )
+        .orderBy(desc(countDistinct(peer.teamId)))
+        .limit(3),
+      latestCalculation(),
+    ]);
+
+  const resultByCompetition = new Map<number, CompetitionResult>();
+  for (const result of resultRows) {
+    if (resultByCompetition.has(result.competitionId)) continue;
+    resultByCompetition.set(result.competitionId, {
+      slug: result.slug,
+      title: result.title,
+      date: new Intl.DateTimeFormat("en", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(result.resultDate),
+      rank: result.finalRank,
+      teams: result.totalTeams,
+      medal: result.medal as CompetitionResult["medal"],
+      teamSize: result.teamSize,
+      specialty: result.specialty ?? "Other",
+      resultScore: result.resultScore,
+    });
+  }
+
+  const profileSpecialties = specialtyRows.map((specialty) => ({
+    name: specialty.name,
+    score: specialty.score,
+  }));
+  return {
+    source: "database",
+    updatedAt,
+    kaggler: toKaggler(row, profileSpecialties),
+    history: [...resultByCompetition.values()],
+    teammates: teammateRows.map((teammate) => ({
+      username: teammate.username,
+      displayName: teammate.displayName || teammate.username,
+      competitionCount: teammate.competitionCount,
+    })),
+  };
+};
+
+export const getKagglerProfileData = cache(
+  cacheDataQuery(getKagglerProfileDataQuery, ["kaggler-profile"]),
 );

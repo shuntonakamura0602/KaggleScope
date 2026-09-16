@@ -4,7 +4,7 @@ KaggleScope is an independent analytics and discovery platform for competitive K
 
 ## Status
 
-Part 7 adds interactive Kaggler search to the database-backed web experience:
+Part 8 completes the database-backed server layer:
 
 - Home discovery surface
 - Overall, Momentum, Solo, and Consistency rankings
@@ -24,6 +24,9 @@ Part 7 adds interactive Kaggler search to the database-backed web experience:
 - Competition history, specialty score, and frequent-teammate queries
 - Explicit fictional preview fallback when `DATABASE_URL` is not configured
 - Debounced Kaggler autocomplete with ranked username/display-name matching
+- Paginated Specialty Power rankings with specialty result and medal totals
+- Result Score-ranked Best Performances on Kaggler profiles
+- Tagged one-hour data caching with authenticated ETL revalidation
 
 Specialty classification, comparison, and methodology pages are intentionally deferred to later implementation parts.
 
@@ -109,7 +112,9 @@ npm run db:studio   # inspect the configured database
 
 Migration files under `db/migrations` are committed and must remain immutable after they have been applied to a shared database. The PostgreSQL client is used only by server-rendered data routes and requires a Node.js server runtime.
 
-When `DATABASE_URL` is configured, the home page, ranking pages, and Kaggler profiles query the processed PostgreSQL tables on the server. Without it, the same routes visibly fall back to the 20 fictional preview records so local development and CI remain deterministic. A configured database error is surfaced instead of silently showing preview data.
+When `DATABASE_URL` is configured, the home page, ranking pages, Specialty rankings, and Kaggler profiles query the processed PostgreSQL tables on the server. Without it, the same routes visibly fall back to the 20 fictional preview records so local development and CI remain deterministic. A configured database error is surfaced instead of silently showing preview data.
+
+Server data is cached for one hour under the `kagglescope-data` tag. Set `REVALIDATE_SECRET`, then have a successful ETL job send `POST /api/revalidate` with `Authorization: Bearer <secret>` to expire the tag immediately. The endpoint is disabled when the secret is unset and never falls back to an unauthenticated invalidation.
 
 ## Data and methodology
 
